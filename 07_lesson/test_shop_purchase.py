@@ -1,46 +1,51 @@
-import pytest
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from shop_page import ShopPage  # Импортируем класс страницы
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+import time
 
+# Условия для теста
+url = "https://www.saucedemo.com/"
+username = "standard_user"
+password = "secret_sauce"
+products_to_add = [
+    "Sauce Labs Backpack",
+    "Sauce Labs Bolt T-Shirt",
+    "Sauce Labs Onesie"
+]
+expected_total = 58.29
 
-@pytest.fixture(scope="module")  # Используем scope="module" для оптимизации
-def driver():
-    # Запуск Chrome-драйвера с использованием ChromeDriverManager
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service)
-    yield driver
-    driver.quit()
+# Настройка веб-драйвера
+driver = webdriver.Chrome()  # Убедитесь, что у вас установлен ChromeDriver
+driver.get(url)
 
+# Авторизация
+driver.find_element(By.ID, "user-name").send_keys(username)
+driver.find_element(By.ID, "password").send_keys(password)
+driver.find_element(By.ID, "login-button").click()
 
-def test_shop_purchase(driver):
-    # Создаем объект страницы магазина
-    shop_page = ShopPage(driver)
+# Добавление товаров в корзину
+for product in products_to_add:
+    product_element = driver.find_element(By.XPATH, f"//div[text()='{product}']/following-sibling::div/button")
+    product_element.click()
 
-    # Открываем сайт магазина
-    shop_page.open("https://www.saucedemo.com/")
+# Переход в корзину
+driver.find_element(By.CLASS_NAME, "shopping_cart_link").click()
 
-    # Авторизация
-    shop_page.login("standard_user", "secret_sauce")
+# Нажатие на Checkout
+driver.find_element(By.ID, "checkout").click()
 
-    # Добавление товаров в корзину
-    shop_page.add_items_to_cart()
+# Заполнение формы данными
+driver.find_element(By.ID, "first-name").send_keys("Имя")
+driver.find_element(By.ID, "last-name").send_keys("Фамилия")
+driver.find_element(By.ID, "postal-code").send_keys("12345")
+driver.find_element(By.ID, "continue").click()
 
-    # Переход в корзину
-    shop_page.go_to_cart()
+# Получение итоговой стоимости
+total_text = driver.find_element(By.CLASS_NAME, "summary_total_label").text
+total_amount = float(total_text.split('$')[1])
 
-    # Нажимаем на кнопку Checkout
-    shop_page.checkout()
+# Проверка итоговой суммы
+assert total_amount == expected_total, f"Ожидалось {expected_total}, но получено {total_amount}"
 
-    # Заполняем форму для оформления
-    shop_page.fill_checkout_form("Иван", "Петров", "123456")
-
-    # Получаем итоговую сумму
-    total_value = shop_page.get_total_price()
-
-    # Проверка итоговой суммы
-    assert total_value == "58.29", (
-        f"Expected total to be $58.29, but got ${total_value}. "
-        "Проверьте итоговую сумму в корзине."
-    )
+# Закрытие браузера
+driver.quit()

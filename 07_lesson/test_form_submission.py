@@ -44,8 +44,22 @@ def test_form_submission(driver):
     # Получаем все элементы предупреждений
     alerts = form_page.get_alerts()
 
-    # Проверяем предупреждения
-    try:
-        form_page.check_alerts(alerts)
-    except AssertionError as e:
-        pytest.fail(f"Ошибка при проверке предупреждений: {str(e)}")
+    # Проверяем предупреждения на наличие ожидаемых цветов
+    expected_colors = {
+        'red': 1,  # Ожидаем одно красное поле
+        'green': 1  # Ожидаем минимум одно зеленое поле
+    }
+
+    color_counts = {'red': 0, 'green': 0}
+
+    for alert in alerts:
+        color = alert.get_color()  # Предполагается, что метод get_color() возвращает цвет предупреждения
+        if color in color_counts:
+            color_counts[color] += 1
+
+    # Ассерты должны быть в коде тестов, а не в коде страницы
+    assert color_counts['red'] == expected_colors[
+        'red'], f"Ожидалось {expected_colors['red']} красных предупреждений, найдено {color_counts['red']}"
+
+    assert color_counts['green'] >= expected_colors[
+        'green'], f"Ожидалось минимум {expected_colors['green']} зеленых предупреждений, найдено {color_counts['green']}"

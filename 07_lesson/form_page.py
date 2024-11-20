@@ -3,6 +3,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
+
 class FormPage:
     def __init__(self, driver):
         self.driver = driver
@@ -36,16 +37,10 @@ class FormPage:
         submit_button.click()
 
     def wait_for_alerts(self):
-        WebDriverWait(self.driver, 10).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".alert"))
-        )
+        WebDriverWait(self.driver, 10).until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".alert")))
 
     def get_alerts(self):
-        # Используем WebDriverWait для повышения стабильности
-        alerts = WebDriverWait(self.driver, 10).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, ".alert"))
-        )
-        return alerts
+        return self.driver.find_elements(By.CSS_SELECTOR, ".alert")
 
     def check_alerts(self, alerts):
         for alert in alerts:

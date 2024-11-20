@@ -1,35 +1,42 @@
+import time
 import pytest
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-from calculator_page import CalculatorPage  # Импортируем класс страницы
+from selenium.webdriver.common.by import By
 
 
-@pytest.fixture(scope="module")
-def driver():
-    # Запуск Chrome-драйвера с использованием ChromeDriverManager
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service)
+@pytest.fixture
+def setup():
+    # Установка драйвера (например, Chrome)
+    driver = webdriver.Chrome()
     yield driver
     driver.quit()
 
 
-def test_calculator(driver):
-    # Создаем объект страницы
-    calculator_page = CalculatorPage(driver)
+def slow_calculator_test(driver, input_value, button_sequence, expected_result):
+    # Открываем страницу калькулятора
+    driver.get("https://bonigarcia.dev/selenium-webdriver-java/slow-calculator.html")
 
-    # Открыть страницу калькулятора
-    calculator_page.open("https://bonigarcia.dev/selenium-webdriver-java/slow-calculator.html")
+    # Вводим значение в поле ввода
+    delay_input = driver.find_element(By.CSS_SELECTOR, "#delay")
+    delay_input.clear()
+    delay_input.send_keys(input_value)
 
-    # Установить задержку
-    calculator_page.set_delay(45)
+    # Нажимаем на кнопки
+    for button in button_sequence:
+        button_element = driver.find_element(By.XPATH, f"//button[text()='{button}']")
+        button_element.click()
 
-    # Выполнить вычисления
-    calculator_page.calculate_sum()
+    # Ждем указанное время (в данном случае 45 секунд)
+    time.sleep(int(input_value))
 
-    # Получить результат и проверить его
-    result_text = calculator_page.get_result()
-    print(f"Результат вычислений: {result_text}")
+    # Проверяем результат
+    result_element = driver.find_element(By.ID, "result")
+    assert result_element.text == expected_result, f"Expected {expected_result}, but got {result_element.text}"
 
-    # Проверка результата
-    assert result_text == "15", f"Expected result to be '15', but got '{result_text}'."
+
+def test_calculate_15(setup):
+    input_value = "45"
+    button_sequence = ["7", "+", "8", "="]
+    expected_result = "15"
+
+    slow_calculator_test(setup, input_value, button_sequence, expected_result)
