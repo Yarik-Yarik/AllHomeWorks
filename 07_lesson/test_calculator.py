@@ -3,6 +3,23 @@ import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
+class CalculatorPage:
+    def __init__(self, driver):
+        self.driver = driver
+
+    def set_delay(self, input_value):
+        delay_input = self.driver.find_element(By.CSS_SELECTOR, "#delay")
+        delay_input.clear()
+        delay_input.send_keys(input_value)
+
+    def click_button(self, button):
+        button_element = self.driver.find_element(By.XPATH, f"//button[text()='{button}']")
+        button_element.click()
+
+    def get_result(self):
+        result_element = self.driver.find_element(By.ID, "result")
+        return result_element.text
+
 
 @pytest.fixture
 def setup():
@@ -12,31 +29,26 @@ def setup():
     driver.quit()
 
 
-def slow_calculator_test(driver, input_value, button_sequence, expected_result):
-    # Открываем страницу калькулятора
-    driver.get("https://bonigarcia.dev/selenium-webdriver-java/slow-calculator.html")
-
-    # Вводим значение в поле ввода
-    delay_input = driver.find_element(By.CSS_SELECTOR, "#delay")
-    delay_input.clear()
-    delay_input.send_keys(input_value)
-
-    # Нажимаем на кнопки
-    for button in button_sequence:
-        button_element = driver.find_element(By.XPATH, f"//button[text()='{button}']")
-        button_element.click()
-
-    # Ждем указанное время (в данном случае 45 секунд)
-    time.sleep(int(input_value))
-
-    # Проверяем результат
-    result_element = driver.find_element(By.ID, "result")
-    assert result_element.text == expected_result, f"Expected {expected_result}, but got {result_element.text}"
-
-
 def test_calculate_15(setup):
     input_value = "45"
     button_sequence = ["7", "+", "8", "="]
     expected_result = "15"
 
-    slow_calculator_test(setup, input_value, button_sequence, expected_result)
+    # Открываем страницу калькулятора
+    setup.get("https://bonigarcia.dev/selenium-webdriver-java/slow-calculator.html")
+
+    # Создаем объект страницы калькулятора
+    calculator_page = CalculatorPage(setup)
+
+    # Вводим значение в поле ввода
+    calculator_page.set_delay(input_value)
+
+    # Нажимаем на кнопки
+    for button in button_sequence:
+        calculator_page.click_button(button)
+
+    # Ждем указанное время (в данном случае 45 секунд)
+    time.sleep(int(input_value))
+
+    # Проверяем результат
+    assert calculator_page.get_result() == expected_result, f"Expected {expected_result}, but got {calculator_page.get_result()}"
